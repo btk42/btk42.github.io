@@ -65,116 +65,139 @@
 
     <script>
       async function okuExcel() {
-        const response = await fetch("multilist.xlsx");
-        const arrayBuffer = await response.arrayBuffer();
-        const data = new Uint8Array(arrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
+  const response = await fetch("multilist.xlsx");
+  const arrayBuffer = await response.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer);
+  const workbook = XLSX.read(data, { type: "array" });
 
-        const tablesDiv = document.getElementById("tables");
-        tablesDiv.innerHTML = "";
+  const tablesDiv = document.getElementById("tables");
+  tablesDiv.innerHTML = "";
 
-        workbook.SheetNames.forEach((sheetName, index) => {
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  // Sekme başlıkları ve içerikleri
+  let tabHeaders = `<ul class="nav nav-tabs" id="excelTabs" role="tablist">`;
+  let tabContents = `<div class="tab-content" id="excelTabContent">`;
 
-          if (jsonData.length === 0) return;
+  workbook.SheetNames.forEach((sheetName, index) => {
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-          let headers = jsonData[0];
-          headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
+    if (jsonData.length === 0) return;
 
-          const tableId = `excelTable_${index}`;
+    let headers = jsonData[0];
+    headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
 
-          // TABLO HTML
-          let html = `
-          <div class="table-container">
-            //<h3>Sayfa: ${sheetName}</h3>
-            <table id="${tableId}" class="display responsive nowrap" style="width:100%">
-              <thead>
-                <tr>`;
+    const tableId = `excelTable_${index}`;
+    const tabId = `tab_${index}`;
 
-          headers.forEach((header) => {
-            html += `<th>${header}</th>`;
-          });
+    // Sekme başlığı
+    tabHeaders += `
+      <li class="nav-item" role="presentation">
+        <button class="nav-link ${index === 0 ? "active" : ""}" id="${tabId}-tab" data-bs-toggle="tab" data-bs-target="#${tabId}" type="button" role="tab" aria-controls="${tabId}" aria-selected="${index === 0}">
+          ${sheetName}
+        </button>
+      </li>`;
 
-          html += `</tr><tr>`; // Filtre satırı
+    // Sekme içeriği
+    let tableHTML = `
+      <table id="${tableId}" class="display responsive nowrap" style="width:100%">
+        <thead>
+          <tr>`;
 
-          headers.forEach(() => {
-            html += `<th><select><option value="">Hepsi</option></select></th>`;
-          });
+    headers.forEach((header) => {
+      tableHTML += `<th>${header}</th>`;
+    });
 
-          html += `</tr></thead><tbody>`;
+    tableHTML += `</tr><tr>`;
 
-          // Veri satırları
-          for (let i = 1; i < jsonData.length; i++) {
-            html += "<tr>";
-            for (let j = 0; j < headers.length; j++) {
-              const cell = jsonData[i][j] ?? "";
-              html += `<td>${cell}</td>`;
-            }
-            html += "</tr>";
-          }
+    headers.forEach(() => {
+      tableHTML += `<th><select><option value="">Hepsi</option></select></th>`;
+    });
 
-          html += "</tbody></table></div>";
-          tablesDiv.innerHTML += html;
+    tableHTML += `</tr></thead><tbody>`;
 
-          // DataTable başlat ve dropdown filtreleri doldur
-          requestAnimationFrame(() => {
-            const table = $(`#${tableId}`).DataTable({
-              responsive: true,
-              pageLength: 25,
-              orderCellsTop: true,
-              fixedHeader: true,
-              language: {
-                search: "Arama:",
-                lengthMenu: "_MENU_ kayıt göster",
-                zeroRecords: "Kayıt bulunamadı",
-                info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
-                infoEmpty: "Kayıt yok",
-                paginate: {
-                  next: "Sonraki",
-                  previous: "Önceki",
-                },
-              },
-              initComplete: function () {
-                this.api()
-                  .columns()
-                  .every(function (colIndex) {
-                    const column = this;
-                    const select = $(column.header())
-                      .parent()
-                      .next()
-                      .find("th")
-                      .eq(colIndex)
-                      .find("select");
-
-                    const uniqueValues = new Set();
-
-                    column.data().each(function (d) {
-                      if (d && d.trim() !== "") {
-                        uniqueValues.add(d.trim());
-                      }
-                    });
-
-                    Array.from(uniqueValues)
-                      .sort()
-                      .forEach(function (value) {
-                        select.append(
-                          `<option value="${value}">${value}</option>`
-                        );
-                      });
-
-                    select.on("change", function () {
-                      const val = $.fn.dataTable.util.escapeRegex(
-                        $(this).val()
-                      );
-                      column.search(val ? `^${val}$` : "", true, false).draw();
-                    });
-                  });
-              },
-            });
-          });
-        });
+    for (let i = 1; i < jsonData.length; i++) {
+      tableHTML += "<tr>";
+      for (let j = 0; j < headers.length; j++) {
+        const cell = jsonData[i][j] ?? "";
+        tableHTML += `<td>${cell}</td>`;
       }
+      tableHTML += "</tr>";
+    }
+
+    tableHTML += `</tbody></table>`;
+
+    tabContents += `
+      <div class="tab-pane fade ${index === 0 ? "show active" : ""}" id="${tabId}" role="tabpanel" aria-labelledby="${tabId}-tab">
+        <div class="table-responsive mt-3">
+          ${tableHTML}
+        </div>
+      </div>`;
+  });
+
+  tabHeaders += `</ul>`;
+  tabContents += `</div>`;
+
+  tablesDiv.innerHTML = tabHeaders + tabContents;
+
+  // Tüm tablolar için DataTables başlat
+  workbook.SheetNames.forEach((_, index) => {
+    const tableId = `excelTable_${index}`;
+
+    requestAnimationFrame(() => {
+      const table = $(`#${tableId}`).DataTable({
+        responsive: true,
+        pageLength: 25,
+        orderCellsTop: true,
+        fixedHeader: true,
+        language: {
+          search: "Arama:",
+          lengthMenu: "_MENU_ kayıt göster",
+          zeroRecords: "Kayıt bulunamadı",
+          info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+          infoEmpty: "Kayıt yok",
+          paginate: {
+            next: "Sonraki",
+            previous: "Önceki",
+          },
+        },
+        initComplete: function () {
+          this.api()
+            .columns()
+            .every(function (colIndex) {
+              const column = this;
+              const select = $(column.header())
+                .parent()
+                .next()
+                .find("th")
+                .eq(colIndex)
+                .find("select");
+
+              const uniqueValues = new Set();
+
+              column.data().each(function (d) {
+                if (d && d.trim() !== "") {
+                  uniqueValues.add(d.trim());
+                }
+              });
+
+              Array.from(uniqueValues)
+                .sort()
+                .forEach(function (value) {
+                  select.append(
+                    `<option value="${value}">${value}</option>`
+                  );
+                });
+
+              select.on("change", function () {
+                const val = $.fn.dataTable.util.escapeRegex($(this).val());
+                column.search(val ? `^${val}$` : "", true, false).draw();
+              });
+            });
+        },
+      });
+    });
+  });
+}
 
       window.onload = okuExcel;
     </script>
