@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Excel Çoklu Sayfa + Dış Filtreleme</title>
+  <title>Excel'den Dinamik Tablo + Filtre</title>
 
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -31,6 +31,7 @@
     .filter-container input {
       padding: 5px;
       margin-right: 10px;
+      margin-bottom: 10px;
       display: inline-block;
     }
 
@@ -41,7 +42,7 @@
 </head>
 <body>
 
-  <h2>Excel'den Tüm Sayfaları Göster + Dış Filtreleme</h2>
+  <h2>Excel Verisi - Tablolar ve Dış Filtreleme</h2>
 
   <div id="tables"></div>
 
@@ -61,10 +62,10 @@
 
         if (jsonData.length === 0) return;
 
+        const headers = jsonData[0];
         const tableId = `excelTable_${index}`;
         const filterId = `filter_${index}`;
 
-        // TABLO HTML
         let html = `
           <div class="table-container">
             <h3>Sayfa: ${sheetName}</h3>
@@ -72,15 +73,12 @@
             <table id="${tableId}" class="display" style="width:100%">
               <thead><tr>`;
 
-        // Başlık
-        const headers = jsonData[0];
-        headers.forEach(cell => {
-          html += `<th>${cell}</th>`;
+        headers.forEach(header => {
+          html += `<th>${header}</th>`;
         });
 
         html += `</tr></thead><tbody>`;
 
-        // Satırlar (eksik hücreleri tamamla)
         for (let i = 1; i < jsonData.length; i++) {
           html += "<tr>";
           for (let j = 0; j < headers.length; j++) {
@@ -93,10 +91,11 @@
         html += "</tbody></table></div>";
         tablesDiv.innerHTML += html;
 
-        // DataTable oluştur (timeout ile DOM hazır olduğunda çalışsın)
-        setTimeout(() => {
+        // DataTable ve filtre bağlama
+        // DOM hazır olduğunda çalışsın
+        requestAnimationFrame(() => {
           const table = $(`#${tableId}`).DataTable({
-            pageLength: 5,
+            pageLength: 10,
             language: {
               search: "Arama:",
               lengthMenu: "_MENU_ kayıt göster",
@@ -110,19 +109,20 @@
             }
           });
 
-          // Filtre kutularını oluştur
+          // Dış filtre input'larını bağla
           const filterContainer = document.getElementById(filterId);
           headers.forEach((header, colIndex) => {
             const input = document.createElement("input");
             input.type = "text";
             input.placeholder = `${header} filtrele`;
+
             input.addEventListener("input", function () {
               table.column(colIndex).search(this.value).draw();
             });
+
             filterContainer.appendChild(input);
           });
-
-        }, 0);
+        });
       });
     }
 
