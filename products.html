@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Excel Sayfa Okuma + Dinamik Tablo + Dış Filtreleme</title>
+  <title>Excel Çoklu Sayfa + Dış Filtreleme</title>
 
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -31,6 +31,7 @@
     .filter-container input {
       padding: 5px;
       margin-right: 10px;
+      display: inline-block;
     }
 
     h3 {
@@ -40,7 +41,7 @@
 </head>
 <body>
 
-  <h2>Excel Dosyasından Tüm Sayfaları Göster</h2>
+  <h2>Excel'den Tüm Sayfaları Göster + Dış Filtreleme</h2>
 
   <div id="tables"></div>
 
@@ -52,19 +53,18 @@
       const workbook = XLSX.read(data, { type: 'array' });
 
       const tablesDiv = document.getElementById('tables');
-      tablesDiv.innerHTML = ''; // Temizle
+      tablesDiv.innerHTML = '';
 
       workbook.SheetNames.forEach((sheetName, index) => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        if (jsonData.length === 0) return; // Boş sayfa geç
+        if (jsonData.length === 0) return;
 
-        // Dinamik tablo ID'leri
         const tableId = `excelTable_${index}`;
         const filterId = `filter_${index}`;
 
-        // HTML oluştur
+        // TABLO HTML
         let html = `
           <div class="table-container">
             <h3>Sayfa: ${sheetName}</h3>
@@ -72,27 +72,28 @@
             <table id="${tableId}" class="display" style="width:100%">
               <thead><tr>`;
 
-        // Başlık satırı
-        jsonData[0].forEach(cell => {
+        // Başlık
+        const headers = jsonData[0];
+        headers.forEach(cell => {
           html += `<th>${cell}</th>`;
         });
 
         html += `</tr></thead><tbody>`;
 
-        // Veriler
+        // Satırlar (eksik hücreleri tamamla)
         for (let i = 1; i < jsonData.length; i++) {
           html += "<tr>";
-          jsonData[i].forEach(cell => {
-            html += `<td>${cell ?? ""}</td>`;
-          });
+          for (let j = 0; j < headers.length; j++) {
+            const cell = jsonData[i][j] ?? "";
+            html += `<td>${cell}</td>`;
+          }
           html += "</tr>";
         }
 
         html += "</tbody></table></div>";
-
         tablesDiv.innerHTML += html;
 
-        // DataTable başlat
+        // DataTable oluştur (timeout ile DOM hazır olduğunda çalışsın)
         setTimeout(() => {
           const table = $(`#${tableId}`).DataTable({
             pageLength: 5,
@@ -106,24 +107,21 @@
                 next: "Sonraki",
                 previous: "Önceki"
               }
-            },
-            initComplete: function () {
-              const api = this.api();
-              const filterContainer = document.getElementById(filterId);
-
-              // Her sütun için dış filtre alanı oluştur
-              api.columns().every(function () {
-                const column = this;
-                const colIndex = column.index();
-                const headerText = $(column.header()).text();
-                const input = $(`<input type="text" placeholder="${headerText} filtrele">`)
-                  .appendTo(filterContainer)
-                  .on('keyup change', function () {
-                    column.search($(this).val()).draw();
-                  });
-              });
             }
           });
+
+          // Filtre kutularını oluştur
+          const filterContainer = document.getElementById(filterId);
+          headers.forEach((header, colIndex) => {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.placeholder = `${header} filtrele`;
+            input.addEventListener("input", function () {
+              table.column(colIndex).search(this.value).draw();
+            });
+            filterContainer.appendChild(input);
+          });
+
         }, 0);
       });
     }
