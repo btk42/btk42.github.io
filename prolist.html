@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excel Tabloları (Mobil + Dropdown Filtre)</title>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    h2, h3 {
+      margin-top: 40px;
+    }
+
+    table.dataTable thead th {
+      vertical-align: bottom;
+    }
+
+    table.dataTable thead select {
+      width: 100%;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+
+    @media screen and (max-width: 768px) {
+      table.dataTable {
+        width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Excel'den Tablolar (Mobil Uyumlu + Dropdown Filtre)</h2>
+
+  <div id="tables"></div>
+
+  <script>
+    async function okuExcel() {
+      const response = await fetch('ButkonNameExercise.xlsx');
+      const arrayBuffer = await response.arrayBuffer();
+      const data = new Uint8Array(arrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      const tablesDiv = document.getElementById('tables');
+      tablesDiv.innerHTML = '';
+
+      workbook.SheetNames.forEach((sheetName, index) => {
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (jsonData.length === 0) return;
+
+        let headers = jsonData[0];
+        headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
+
+        const tableId = `excelTable_${index}`;
+
+        // TABLO HTML
+        let html = `
+          <div class="table-container">
+            <h3>Sayfa: ${sheetName}</h3>
+            <table id="${tableId}" class="display responsive nowrap" style="width:100%">
+              <thead>
+                <tr>`;
+
+        headers.forEach(header => {
+          html += `<th>${header}</th>`;
+        });
+
+        html += `</tr><tr>`; // Filtre satırı
+
+        headers.forEach(() => {
+          html += `<th><select><option value="">Hepsi</option></select></th>`;
+        });
+
+        html += `</tr></thead><tbody>`;
+
+        // Veri satırları
+        for (let i = 1; i < jsonData.length; i++) {
+          html += "<tr>";
+          for (let j = 0; j < headers.length; j++) {
+            const cell = jsonData[i][j] ?? "";
+            html += `<td>${cell}</td>`;
+          }
+          html += "</tr>";
+        }
+
+        html += "</tbody></table></div>";
+        tablesDiv.innerHTML += html;
+
+        // DataTable başlat ve dropdown filtreleri doldur
+        requestAnimationFrame(() => {
+          const table = $(`#${tableId}`).DataTable({
+            responsive: true,
+            pageLength: 20,
+            orderCellsTop: true,
+            fixedHeader: true,
+            language: {
+              search: "Genel Arama:",
+              lengthMenu: "_MENU_ kayıt göster",
+              zeroRecords: "Kayıt bulunamadı",
+              info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+              infoEmpty: "Kayıt yok",
+              paginate: {
+                next: "Sonraki",
+                previous: "Önceki"
+              }
+            },
+            initComplete: function () {
+              this.api().columns().every(function (colIndex) {
+                const column = this;
+                const select = $(column.header()).parent().next().find("th").eq(colIndex).find("select");
+
+                const uniqueValues = new Set();
+
+                column.data().each(function (d) {
+                  if (d && d.trim() !== "") {
+                    uniqueValues.add(d.trim());
+                  }
+                });
+
+                Array.from(uniqueValues).sort().forEach(function (value) {
+                  select.append(`<option value="${value}">${value}</option>`);
+                });
+
+                select.on("change", function () {
+                  const val = $.fn.dataTable.util.escapeRegex($(this).val());
+                  column.search(val ? `^${val}$` : "", true, false).draw();
+                });
+              });
+            }
+          });
+        });
+      });
+    }
+
+    window.onload = okuExcel;
+  </script>
+</body>
+</html>
