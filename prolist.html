@@ -65,7 +65,7 @@
 
     <script>
       async function okuExcel() {
-        const response = await fetch("ButkonNameExercise.xlsx");
+        const response = await fetch("multilist.xlsx");
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
@@ -87,7 +87,7 @@
           // TABLO HTML
           let html = `
           <div class="table-container">
-            //<h3>Sayfa: ${sheetName}</h3>
+            <h3>Sayfa: ${sheetName}</h3>
             <table id="${tableId}" class="display responsive nowrap" style="width:100%">
               <thead>
                 <tr>`;
