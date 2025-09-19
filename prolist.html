@@ -1,156 +1,182 @@
 <!DOCTYPE html>
 <html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Excel Tabloları (Mobil + Dropdown Filtre)</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="Copyright" content="Copyright 2025 - Butkon RD Team">
+	<meta http-equiv="Reply-to" content="byyarim@gmail.com">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge,chrome=1">
 
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Butkon Ürünleri | Butkon</title>
 
-  <!-- DataTables -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <meta name="author" content="Bayram YARIM" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="title" content="BUTKON | Github Page" />
+	<meta name="description" content="Butkon Asansör" />
+	<meta name="robots" content="index,follow">
+	<meta name="robots" content="max-image-preview:large">
 
-  <!-- SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css"/>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-
-    h2, h3 {
-      margin-top: 40px;
-    }
-
-    table.dataTable thead th {
-      vertical-align: bottom;
-    }
-
-    table.dataTable thead select {
-      width: 100%;
-      padding: 4px;
-      box-sizing: border-box;
-    }
-
-    @media screen and (max-width: 768px) {
-      table.dataTable {
-        width: 100% !important;
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 16px;
       }
-    }
-  </style>
-</head>
-<body>
 
-  <h2>Excel'den Tablolar (Mobil Uyumlu + Dropdown Filtre)</h2>
+      h2,
+      h3 {
+        margin-top: 32px;
+      }
 
-  <div id="tables"></div>
+      table.dataTable thead th {
+        vertical-align: bottom;
+      }
 
-  <script>
-    async function okuExcel() {
-      const response = await fetch('ButkonNameExercise.xlsx');
-      const arrayBuffer = await response.arrayBuffer();
-      const data = new Uint8Array(arrayBuffer);
-      const workbook = XLSX.read(data, { type: 'array' });
+      table.dataTable thead select {
+        width: 100%;
+        padding: 4px;
+        box-sizing: border-box;
+      }
 
-      const tablesDiv = document.getElementById('tables');
-      tablesDiv.innerHTML = '';
+      @media screen and (max-width: 768px) {
+        table.dataTable {
+          width: 100% !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h2 class="center">Butkon Ürünleri</h2>
+    </div>
 
-      workbook.SheetNames.forEach((sheetName, index) => {
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    <div id="tables"></div>
 
-        if (jsonData.length === 0) return;
+    <script>
+      async function okuExcel() {
+        const response = await fetch("ButkonNameExercise.xlsx");
+        const arrayBuffer = await response.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
 
-        let headers = jsonData[0];
-        headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
+        const tablesDiv = document.getElementById("tables");
+        tablesDiv.innerHTML = "";
 
-        const tableId = `excelTable_${index}`;
+        workbook.SheetNames.forEach((sheetName, index) => {
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        // TABLO HTML
-        let html = `
+          if (jsonData.length === 0) return;
+
+          let headers = jsonData[0];
+          headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
+
+          const tableId = `excelTable_${index}`;
+
+          // TABLO HTML
+          let html = `
           <div class="table-container">
             <h3>Sayfa: ${sheetName}</h3>
             <table id="${tableId}" class="display responsive nowrap" style="width:100%">
               <thead>
                 <tr>`;
 
-        headers.forEach(header => {
-          html += `<th>${header}</th>`;
-        });
+          headers.forEach((header) => {
+            html += `<th>${header}</th>`;
+          });
 
-        html += `</tr><tr>`; // Filtre satırı
+          html += `</tr><tr>`; // Filtre satırı
 
-        headers.forEach(() => {
-          html += `<th><select><option value="">Hepsi</option></select></th>`;
-        });
+          headers.forEach(() => {
+            html += `<th><select><option value="">Hepsi</option></select></th>`;
+          });
 
-        html += `</tr></thead><tbody>`;
+          html += `</tr></thead><tbody>`;
 
-        // Veri satırları
-        for (let i = 1; i < jsonData.length; i++) {
-          html += "<tr>";
-          for (let j = 0; j < headers.length; j++) {
-            const cell = jsonData[i][j] ?? "";
-            html += `<td>${cell}</td>`;
-          }
-          html += "</tr>";
-        }
-
-        html += "</tbody></table></div>";
-        tablesDiv.innerHTML += html;
-
-        // DataTable başlat ve dropdown filtreleri doldur
-        requestAnimationFrame(() => {
-          const table = $(`#${tableId}`).DataTable({
-            responsive: true,
-            pageLength: 20,
-            orderCellsTop: true,
-            fixedHeader: true,
-            language: {
-              search: "Genel Arama:",
-              lengthMenu: "_MENU_ kayıt göster",
-              zeroRecords: "Kayıt bulunamadı",
-              info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
-              infoEmpty: "Kayıt yok",
-              paginate: {
-                next: "Sonraki",
-                previous: "Önceki"
-              }
-            },
-            initComplete: function () {
-              this.api().columns().every(function (colIndex) {
-                const column = this;
-                const select = $(column.header()).parent().next().find("th").eq(colIndex).find("select");
-
-                const uniqueValues = new Set();
-
-                column.data().each(function (d) {
-                  if (d && d.trim() !== "") {
-                    uniqueValues.add(d.trim());
-                  }
-                });
-
-                Array.from(uniqueValues).sort().forEach(function (value) {
-                  select.append(`<option value="${value}">${value}</option>`);
-                });
-
-                select.on("change", function () {
-                  const val = $.fn.dataTable.util.escapeRegex($(this).val());
-                  column.search(val ? `^${val}$` : "", true, false).draw();
-                });
-              });
+          // Veri satırları
+          for (let i = 1; i < jsonData.length; i++) {
+            html += "<tr>";
+            for (let j = 0; j < headers.length; j++) {
+              const cell = jsonData[i][j] ?? "";
+              html += `<td>${cell}</td>`;
             }
+            html += "</tr>";
+          }
+
+          html += "</tbody></table></div>";
+          tablesDiv.innerHTML += html;
+
+          // DataTable başlat ve dropdown filtreleri doldur
+          requestAnimationFrame(() => {
+            const table = $(`#${tableId}`).DataTable({
+              responsive: true,
+              pageLength: 25,
+              orderCellsTop: true,
+              fixedHeader: true,
+              language: {
+                search: "Arama:",
+                lengthMenu: "_MENU_ kayıt göster",
+                zeroRecords: "Kayıt bulunamadı",
+                info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+                infoEmpty: "Kayıt yok",
+                paginate: {
+                  next: "Sonraki",
+                  previous: "Önceki",
+                },
+              },
+              initComplete: function () {
+                this.api()
+                  .columns()
+                  .every(function (colIndex) {
+                    const column = this;
+                    const select = $(column.header())
+                      .parent()
+                      .next()
+                      .find("th")
+                      .eq(colIndex)
+                      .find("select");
+
+                    const uniqueValues = new Set();
+
+                    column.data().each(function (d) {
+                      if (d && d.trim() !== "") {
+                        uniqueValues.add(d.trim());
+                      }
+                    });
+
+                    Array.from(uniqueValues)
+                      .sort()
+                      .forEach(function (value) {
+                        select.append(
+                          `<option value="${value}">${value}</option>`
+                        );
+                      });
+
+                    select.on("change", function () {
+                      const val = $.fn.dataTable.util.escapeRegex(
+                        $(this).val()
+                      );
+                      column.search(val ? `^${val}$` : "", true, false).draw();
+                    });
+                  });
+              },
+            });
           });
         });
-      });
-    }
+      }
 
-    window.onload = okuExcel;
-  </script>
-</body>
+      window.onload = okuExcel;
+    </script>
+  </body>
 </html>
