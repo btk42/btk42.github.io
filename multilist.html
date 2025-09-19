@@ -64,7 +64,7 @@
     <div id="tables"></div>
 
     <script>
-      async function okuExcel() {
+async function okuExcel() {
   const response = await fetch("multilist.xlsx");
   const arrayBuffer = await response.arrayBuffer();
   const data = new Uint8Array(arrayBuffer);
@@ -73,9 +73,16 @@
   const tablesDiv = document.getElementById("tables");
   tablesDiv.innerHTML = "";
 
-  // Sekme başlıkları ve içerikleri
-  let tabHeaders = `<ul class="nav nav-tabs" id="excelTabs" role="tablist">`;
-  let tabContents = `<div class="tab-content" id="excelTabContent">`;
+  // Sekme başlıkları
+  const tabHeaderUl = document.createElement("ul");
+  tabHeaderUl.className = "nav nav-tabs";
+  tabHeaderUl.id = "excelTabs";
+  tabHeaderUl.role = "tablist";
+
+  // Sekme içerikleri
+  const tabContentDiv = document.createElement("div");
+  tabContentDiv.className = "tab-content";
+  tabContentDiv.id = "excelTabContent";
 
   workbook.SheetNames.forEach((sheetName, index) => {
     const worksheet = workbook.Sheets[sheetName];
@@ -89,62 +96,80 @@
     const tableId = `excelTable_${index}`;
     const tabId = `tab_${index}`;
 
-    // Sekme başlığı
-    tabHeaders += `
-      <li class="nav-item" role="presentation">
-        <button class="nav-link ${index === 0 ? "active" : ""}" id="${tabId}-tab" data-bs-toggle="tab" data-bs-target="#${tabId}" type="button" role="tab" aria-controls="${tabId}" aria-selected="${index === 0}">
-          ${sheetName}
-        </button>
-      </li>`;
+    // TAB HEADER (Sekme Düğmesi)
+    const li = document.createElement("li");
+    li.className = "nav-item";
+    li.role = "presentation";
 
-    // Sekme içeriği
-    let tableHTML = `
-      <table id="${tableId}" class="display responsive nowrap" style="width:100%">
-        <thead>
-          <tr>`;
+    const button = document.createElement("button");
+    button.className = `nav-link ${index === 0 ? "active" : ""}`;
+    button.id = `${tabId}-tab`;
+    button.setAttribute("data-bs-toggle", "tab");
+    button.setAttribute("data-bs-target", `#${tabId}`);
+    button.type = "button";
+    button.role = "tab";
+    button.setAttribute("aria-controls", tabId);
+    button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+    button.textContent = sheetName;
 
+    li.appendChild(button);
+    tabHeaderUl.appendChild(li);
+
+    // TAB CONTENT (Tabpanes)
+    const tabPane = document.createElement("div");
+    tabPane.className = `tab-pane fade ${index === 0 ? "show active" : ""}`;
+    tabPane.id = tabId;
+    tabPane.role = "tabpanel";
+    tabPane.setAttribute("aria-labelledby", `${tabId}-tab`);
+
+    const tableContainer = document.createElement("div");
+    tableContainer.className = "table-responsive mt-3";
+
+    const table = document.createElement("table");
+    table.id = tableId;
+    table.className = "display responsive nowrap";
+    table.style.width = "100%";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
     headers.forEach((header) => {
-      tableHTML += `<th>${header}</th>`;
+      const th = document.createElement("th");
+      th.textContent = header;
+      headerRow.appendChild(th);
     });
 
-    tableHTML += `</tr><tr>`;
-
+    const filterRow = document.createElement("tr");
     headers.forEach(() => {
-      tableHTML += `<th><select><option value="">Hepsi</option></select></th>`;
+      const th = document.createElement("th");
+      const select = document.createElement("select");
+      select.innerHTML = `<option value="">Hepsi</option>`;
+      th.appendChild(select);
+      filterRow.appendChild(th);
     });
 
-    tableHTML += `</tr></thead><tbody>`;
+    thead.appendChild(headerRow);
+    thead.appendChild(filterRow);
+    table.appendChild(thead);
 
+    const tbody = document.createElement("tbody");
     for (let i = 1; i < jsonData.length; i++) {
-      tableHTML += "<tr>";
+      const row = document.createElement("tr");
       for (let j = 0; j < headers.length; j++) {
-        const cell = jsonData[i][j] ?? "";
-        tableHTML += `<td>${cell}</td>`;
+        const td = document.createElement("td");
+        td.textContent = jsonData[i][j] ?? "";
+        row.appendChild(td);
       }
-      tableHTML += "</tr>";
+      tbody.appendChild(row);
     }
 
-    tableHTML += `</tbody></table>`;
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    tabPane.appendChild(tableContainer);
+    tabContentDiv.appendChild(tabPane);
 
-    tabContents += `
-      <div class="tab-pane fade ${index === 0 ? "show active" : ""}" id="${tabId}" role="tabpanel" aria-labelledby="${tabId}-tab">
-        <div class="table-responsive mt-3">
-          ${tableHTML}
-        </div>
-      </div>`;
-  });
-
-  tabHeaders += `</ul>`;
-  tabContents += `</div>`;
-
-  tablesDiv.innerHTML = tabHeaders + tabContents;
-
-  // Tüm tablolar için DataTables başlat
-  workbook.SheetNames.forEach((_, index) => {
-    const tableId = `excelTable_${index}`;
-
+    // DataTable başlat
     requestAnimationFrame(() => {
-      const table = $(`#${tableId}`).DataTable({
+      const dt = $(`#${tableId}`).DataTable({
         responsive: true,
         pageLength: 25,
         orderCellsTop: true,
@@ -197,7 +222,12 @@
       });
     });
   });
+
+  // En son DOM’a ekle
+  tablesDiv.appendChild(tabHeaderUl);
+  tablesDiv.appendChild(tabContentDiv);
 }
+
 
       window.onload = okuExcel;
     </script>
