@@ -63,64 +63,94 @@
 
     <div id="tables"></div>
 
-    <script>
-async function okuExcel() {
-  const response = await fetch("multilist.xlsx");
-  const arrayBuffer = await response.arrayBuffer();
-  const data = new Uint8Array(arrayBuffer);
-  const workbook = XLSX.read(data, { type: "array" });
+<script>
+  let sheetDataCache = {};
 
-  const tablesDiv = document.getElementById("tables");
-  tablesDiv.innerHTML = "";
+  async function okuExcel() {
+    const response = await fetch("multilist.xlsx");
+    const arrayBuffer = await response.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: "array" });
 
-  // Sekme başlıkları
-  const tabHeaderUl = document.createElement("ul");
-  tabHeaderUl.className = "nav nav-tabs";
-  tabHeaderUl.id = "excelTabs";
-  tabHeaderUl.role = "tablist";
+    const tablesDiv = document.getElementById("tables");
+    tablesDiv.innerHTML = "";
 
-  // Sekme içerikleri
-  const tabContentDiv = document.createElement("div");
-  tabContentDiv.className = "tab-content";
-  tabContentDiv.id = "excelTabContent";
+    const tabHeaderUl = document.createElement("ul");
+    tabHeaderUl.className = "nav nav-tabs";
+    tabHeaderUl.id = "excelTabs";
+    tabHeaderUl.role = "tablist";
 
-  workbook.SheetNames.forEach((sheetName, index) => {
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const tabContentDiv = document.createElement("div");
+    tabContentDiv.className = "tab-content";
+    tabContentDiv.id = "excelTabContent";
 
-    if (jsonData.length === 0) return;
+    workbook.SheetNames.forEach((sheetName, index) => {
+      const tabId = `tab_${index}`;
+      const tableId = `excelTable_${index}`;
 
-    let headers = jsonData[0];
-    headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
+      // Sheet verisini belleğe al
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      sheetDataCache[tabId] = {
+        headers: jsonData[0].map((h, i) => h || `Sütun ${i + 1}`),
+        rows: jsonData.slice(1),
+        tableId: tableId,
+        sheetName: sheetName,
+        loaded: false,
+      };
 
-    const tableId = `excelTable_${index}`;
-    const tabId = `tab_${index}`;
+      // Sekme başlığı
+      const li = document.createElement("li");
+      li.className = "nav-item";
+      li.role = "presentation";
 
-    // TAB HEADER (Sekme Düğmesi)
-    const li = document.createElement("li");
-    li.className = "nav-item";
-    li.role = "presentation";
+      const button = document.createElement("button");
+      button.className = `nav-link ${index === 0 ? "active" : ""}`;
+      button.id = `${tabId}-tab`;
+      button.setAttribute("data-bs-toggle", "tab");
+      button.setAttribute("data-bs-target", `#${tabId}`);
+      button.type = "button";
+      button.role = "tab";
+      button.setAttribute("aria-controls", tabId);
+      button.setAttribute("aria-selected", index === 0 ? "true" : "false");
+      button.textContent = sheetName;
 
-    const button = document.createElement("button");
-    button.className = `nav-link ${index === 0 ? "active" : ""}`;
-    button.id = `${tabId}-tab`;
-    button.setAttribute("data-bs-toggle", "tab");
-    button.setAttribute("data-bs-target", `#${tabId}`);
-    button.type = "button";
-    button.role = "tab";
-    button.setAttribute("aria-controls", tabId);
-    button.setAttribute("aria-selected", index === 0 ? "true" : "false");
-    button.textContent = sheetName;
+      li.appendChild(button);
+      tabHeaderUl.appendChild(li);
 
-    li.appendChild(button);
-    tabHeaderUl.appendChild(li);
+      // Sekme içeriği (boş başta)
+      const tabPane = document.createElement("div");
+      tabPane.className = `tab-pane fade ${index === 0 ? "show active" : ""}`;
+      tabPane.id = tabId;
+      tabPane.role = "tabpanel";
+      tabPane.setAttribute("aria-labelledby", `${tabId}-tab`);
 
-    // TAB CONTENT (Tabpanes)
-    const tabPane = document.createElement("div");
-    tabPane.className = `tab-pane fade ${index === 0 ? "show active" : ""}`;
-    tabPane.id = tabId;
-    tabPane.role = "tabpanel";
-    tabPane.setAttribute("aria-labelledby", `${tabId}-tab`);
+      tabContentDiv.appendChild(tabPane);
+    });
+
+    tablesDiv.appendChild(tabHeaderUl);
+    tablesDiv.appendChild(tabContentDiv);
+
+    // Sekme geçişinde lazy load
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach((btn) => {
+      btn.addEventListener("shown.bs.tab", (e) => {
+        const targetId = e.target.getAttribute("data-bs-target").substring(1); // #tab_0 → tab_0
+        loadTabContent(targetId);
+      });
+    });
+
+    // İlk sekmeyi yükle
+    const firstTabId = `tab_0`;
+    loadTabContent(firstTabId);
+  }
+
+  function loadTabContent(tabId) {
+    const tabPane = document.getElementById(tabId);
+    const data = sheetDataCache[tabId];
+
+    if (!data || data.loaded) return; // zaten yüklendiyse geç
+
+    const { headers, rows, tableId } = data;
 
     const tableContainer = document.createElement("div");
     tableContainer.className = "table-responsive mt-3";
@@ -152,20 +182,19 @@ async function okuExcel() {
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    for (let i = 1; i < jsonData.length; i++) {
-      const row = document.createElement("tr");
-      for (let j = 0; j < headers.length; j++) {
+    rows.forEach((row) => {
+      const tr = document.createElement("tr");
+      headers.forEach((_, i) => {
         const td = document.createElement("td");
-        td.textContent = jsonData[i][j] ?? "";
-        row.appendChild(td);
-      }
-      tbody.appendChild(row);
-    }
+        td.textContent = row[i] ?? "";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
 
     table.appendChild(tbody);
     tableContainer.appendChild(table);
     tabPane.appendChild(tableContainer);
-    tabContentDiv.appendChild(tabPane);
 
     // DataTable başlat
     requestAnimationFrame(() => {
@@ -221,15 +250,13 @@ async function okuExcel() {
         },
       });
     });
-  });
 
-  // En son DOM’a ekle
-  tablesDiv.appendChild(tabHeaderUl);
-  tablesDiv.appendChild(tabContentDiv);
-}
+    // Artık tekrar yüklenmesin
+    data.loaded = true;
+  }
 
+  window.onload = okuExcel;
+</script>
 
-      window.onload = okuExcel;
-    </script>
   </body>
 </html>
