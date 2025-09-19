@@ -2,15 +2,13 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Excel Okuma + Filtreleme + Sıralama</title>
-
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <title>Excel Sayfa Okuma + Dinamik Tablo + Dış Filtreleme</title>
 
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <!-- DataTables JS -->
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
   <!-- SheetJS -->
@@ -22,116 +20,115 @@
       margin: 30px;
     }
 
-    #filters {
-      margin-bottom: 20px;
+    .table-container {
+      margin-bottom: 60px;
     }
 
-    label {
+    .filter-container {
+      margin: 10px 0 20px 0;
+    }
+
+    .filter-container input {
+      padding: 5px;
       margin-right: 10px;
     }
 
-    table.dataTable thead input {
-      width: 100%;
+    h3 {
+      margin-top: 50px;
     }
   </style>
 </head>
 <body>
 
-  <h2>Excel Verileri</h2>
+  <h2>Excel Dosyasından Tüm Sayfaları Göster</h2>
 
-  <div id="filters">
-    <label>Tarih Başlangıç: <input type="date" id="startDate"></label>
-    <label>Tarih Bitiş: <input type="date" id="endDate"></label>
-  </div>
-
-  <div id="output"></div>
+  <div id="tables"></div>
 
   <script>
     async function okuExcel() {
-      const response = await fetch('ButkonNameExercise.xlsx');
+      const response = await fetch('veri.xlsx');
       const arrayBuffer = await response.arrayBuffer();
       const data = new Uint8Array(arrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
 
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const tablesDiv = document.getElementById('tables');
+      tablesDiv.innerHTML = ''; // Temizle
 
-      // Tablo oluştur
-      let html = "<table id='excelTable' class='display'><thead><tr>";
-      jsonData[0].forEach(cell => {
-        html += `<th>${cell}</th>`;
-      });
-      html += "</tr></thead><tbody>";
+      workbook.SheetNames.forEach((sheetName, index) => {
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      for (let i = 1; i < jsonData.length; i++) {
-        html += "<tr>";
-        jsonData[i].forEach(cell => {
-          html += `<td>${cell}</td>`;
+        if (jsonData.length === 0) return; // Boş sayfa geç
+
+        // Dinamik tablo ID'leri
+        const tableId = `excelTable_${index}`;
+        const filterId = `filter_${index}`;
+
+        // HTML oluştur
+        let html = `
+          <div class="table-container">
+            <h3>Sayfa: ${sheetName}</h3>
+            <div class="filter-container" id="${filterId}"></div>
+            <table id="${tableId}" class="display" style="width:100%">
+              <thead><tr>`;
+
+        // Başlık satırı
+        jsonData[0].forEach(cell => {
+          html += `<th>${cell}</th>`;
         });
-        html += "</tr>";
-      }
 
-      html += "</tbody></table>";
-      document.getElementById('output').innerHTML = html;
+        html += `</tr></thead><tbody>`;
 
-      // DataTable başlat
-      const table = $('#excelTable').DataTable({
-        pageLength: 10,
-        language: {
-          search: "Arama:",
-          lengthMenu: "_MENU_ kayıt göster",
-          zeroRecords: "Eşleşen kayıt bulunamadı",
-          info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
-          infoEmpty: "Kayıt yok",
-          paginate: {
-            next: "Sonraki",
-            previous: "Önceki"
-          }
-        },
-        initComplete: function () {
-          // Sütunlara göre filtreleme (ilk 3 sütun için örnek)
-          this.api().columns([0, 1, 2]).every(function () {
-            const column = this;
-            const input = $('<input type="text" placeholder="Filtrele">')
-              .appendTo($(column.header()).empty())
-              .on('keyup change', function () {
-                column.search($(this).val()).draw();
-              });
+        // Veriler
+        for (let i = 1; i < jsonData.length; i++) {
+          html += "<tr>";
+          jsonData[i].forEach(cell => {
+            html += `<td>${cell ?? ""}</td>`;
           });
+          html += "</tr>";
         }
-      });
 
-      // 📅 Tarih filtreleme (örnek: 3. sütun tarih olsun)
-      $.fn.dataTable.ext.search.push(
-        function (settings, data, dataIndex) {
-          const start = $('#startDate').val();
-          const end = $('#endDate').val();
-          const dateStr = data[2]; // 3. sütun (0-index)
+        html += "</tbody></table></div>";
 
-          if (!dateStr) return true;
+        tablesDiv.innerHTML += html;
 
-          const cellDate = new Date(dateStr);
-          if (isNaN(cellDate)) return true;
+        // DataTable başlat
+        setTimeout(() => {
+          const table = $(`#${tableId}`).DataTable({
+            pageLength: 5,
+            language: {
+              search: "Arama:",
+              lengthMenu: "_MENU_ kayıt göster",
+              zeroRecords: "Eşleşen kayıt bulunamadı",
+              info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+              infoEmpty: "Kayıt yok",
+              paginate: {
+                next: "Sonraki",
+                previous: "Önceki"
+              }
+            },
+            initComplete: function () {
+              const api = this.api();
+              const filterContainer = document.getElementById(filterId);
 
-          if (
-            (!start || new Date(start) <= cellDate) &&
-            (!end || cellDate <= new Date(end))
-          ) {
-            return true;
-          }
-
-          return false;
-        }
-      );
-
-      $('#startDate, #endDate').on('change', function () {
-        table.draw();
+              // Her sütun için dış filtre alanı oluştur
+              api.columns().every(function () {
+                const column = this;
+                const colIndex = column.index();
+                const headerText = $(column.header()).text();
+                const input = $(`<input type="text" placeholder="${headerText} filtrele">`)
+                  .appendTo(filterContainer)
+                  .on('keyup change', function () {
+                    column.search($(this).val()).draw();
+                  });
+              });
+            }
+          });
+        }, 0);
       });
     }
 
     window.onload = okuExcel;
   </script>
-
 </body>
 </html>
