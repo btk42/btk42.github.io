@@ -99,8 +99,8 @@
               <div class="table-responsive mb-5">
                 <table id="${tableId}" class="display responsive nowrap" style="width:100%">
                   <thead>
-                    <tr>${headers.map(h => h.toLowerCase().trim() !== "link" ? `<th>${h}</th>` : "").join("")}</tr>
-                    <tr>${headers.map(h => h.toLowerCase().trim() !== "link" ? `<th><select><option value="">Hepsi</option></select></th>` : "").join("")}</tr>
+                    <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+                    <tr>${headers.map(() => `<th><select><option value="">Hepsi</option></select></th>`).join("")}</tr>
                   </thead>
                   <tbody>`;
 
@@ -112,10 +112,9 @@
                 const colName = headers[j]?.toString().toLowerCase().trim();
                 const cell = row[j] ?? "";
 
-                //link alanını gizle
+                linkUrl = "";
                 if (colName === "link") {
                   linkUrl = cell;
-                  continue;
                 }
 
                  // Ürün Kodu sütununa link ekle
@@ -123,7 +122,7 @@
                   if (linkUrl && linkUrl.trim() !== "") {
                     html += `<td><a href="${linkUrl}" target="_blank">${cell}</a></td>`;
                   } else {
-                    html += `<td>${cell}</td>`; // link boşsa düz yaz
+                    html += `<td>${cell}</td>`;
                   }
                 } else {
                   html += `<td>${cell}</td>`;
@@ -139,9 +138,9 @@
             requestAnimationFrame(() => {
               const hiddenCols = [];
               headers.forEach((h, idx) => {
-                if (h.toLowerCase().trim() === "link") {
-                  hiddenCols.push({ targets: [idx], visible: false, searchable: false });
-                }
+                // if (h.toLowerCase().trim() === "link") {
+                //   hiddenCols.push({ targets: [idx], visible: false, searchable: false });
+                // }
               });
 
               const table = $(`#${tableId}`).DataTable({
