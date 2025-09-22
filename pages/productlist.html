@@ -113,12 +113,12 @@
                 const cell = row[j] ?? "";
 
                 //link alanını gizle
-                if (colName === "Link") {
+                if (colName === "link") {
                   linkUrl = cell;
                   continue;
                 }
 
-                if (colName === "Ürün Kodu" && linkUrl) {
+                if (colName === "ürünkodu" && linkUrl) {
                   html += `<td><a href="${linkUrl}" target="_blank">${cell}</a></td>`;
                 } else {
                   html += `<td>${cell}</td>`;
