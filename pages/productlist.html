@@ -63,19 +63,19 @@
   <div id="tables"></div>
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const fileName = urlParams.get("fileName") || "productlist.xlsx";
+    const fileName = urlParams.get("fileName") || "butonlar.xlsx";
     const pageTitle = urlParams.get("pageTitle") || "Butkon Ürünleri";
 
-    // Sayfa başlıklarını güncelle
-    document.title = pageTitle + " | Butkon";
+    // Sayfa başlığı ve meta title güncelle
+    document.title = `${pageTitle} | Butkon`;
     const metaTitle = document.querySelector('meta[name="title"]');
-    if (metaTitle) metaTitle.setAttribute("content", pageTitle + " | Butkon");
+    if (metaTitle) metaTitle.setAttribute("content", `${pageTitle} | Butkon`);
     document.getElementById("pageHeading").textContent = pageTitle;
 
     async function okuExcel() {
       try {
         const response = await fetch(fileName);
-        if (!response.ok) throw new Error("Dosya yüklenemedi.");
+        if (!response.ok) throw new Error("Excel dosyası bulunamadı.");
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
@@ -89,15 +89,20 @@
           if (jsonData.length === 0) return;
 
           const headers = jsonData[0].map((h, i) => h || `Sütun ${i + 1}`);
+          const linkIndex = headers.findIndex(h => h.toLowerCase().trim() === "link");
+          const urunKoduIndex = headers.findIndex(h => h.toLowerCase().trim() === "ürün kodu");
+
+          // Link hariç tüm başlıkları al
+          const visibleHeaders = headers.filter((_, i) => i !== linkIndex);
           const tableId = `excelTable_${index}`;
 
-          // Başlık kısmı
+          // Tablonun HTML'i
           let html = `
             <div class="table-responsive mb-5">
               <table id="${tableId}" class="display responsive nowrap" style="width:100%">
                 <thead>
-                  <tr>${headers.map(h => h.toLowerCase().trim() !== "link" ? `<th>${h}</th>` : "").join("")}</tr>
-                  <tr>${headers.map(h => h.toLowerCase().trim() !== "link" ? `<th><select><option value="">Hepsi</option></select></th>` : "").join("")}</tr>
+                  <tr>${visibleHeaders.map(h => `<th>${h}</th>`).join("")}</tr>
+                  <tr>${visibleHeaders.map(() => `<th><select><option value="">Hepsi</option></select></th>`).join("")}</tr>
                 </thead>
                 <tbody>`;
 
@@ -105,24 +110,18 @@
           for (let i = 1; i < jsonData.length; i++) {
             const row = jsonData[i];
             let rowHtml = "<tr>";
-            let linkValue = "";
 
-            // Link sütununun index'ini bul
-            const linkIndex = headers.findIndex(h => h.toLowerCase().trim() === "link");
-            const urunKoduIndex = headers.findIndex(h => h.toLowerCase().trim() === "ürün kodu");
+            visibleHeaders.forEach((_, visibleColIndex) => {
+              const actualColIndex = headers.findIndex((_, idx) => idx !== linkIndex && headers[idx] === visibleHeaders[visibleColIndex]);
+              const cell = row[actualColIndex] ?? "";
 
-            // Link hücresi varsa al
-            if (linkIndex >= 0) {
-              linkValue = row[linkIndex]?.toString().trim() || "";
-            }
-
-            // Hücreleri oluştur
-            headers.forEach((header, colIndex) => {
-              const colName = header.toLowerCase().trim();
-              const cell = row[colIndex] ?? "";
-
-              if (colIndex === urunKoduIndex && linkValue) {
-                rowHtml += `<td><a href="${linkValue}" target="_blank">${cell}</a></td>`;
+              if (actualColIndex === urunKoduIndex) {
+                const linkValue = row[linkIndex]?.toString().trim();
+                if (linkValue) {
+                  rowHtml += `<td><a href="${linkValue}" target="_blank">${cell}</a></td>`;
+                } else {
+                  rowHtml += `<td>${cell}</td>`;
+                }
               } else {
                 rowHtml += `<td>${cell}</td>`;
               }
@@ -132,7 +131,7 @@
             html += rowHtml;
           }
 
-          html += `</tbody></table></div>`;
+          html += "</tbody></table></div>";
           tablesDiv.innerHTML += html;
 
           // DataTable başlat
@@ -142,13 +141,6 @@
               pageLength: 25,
               orderCellsTop: true,
               fixedHeader: true,
-              columnDefs: [ 
-                { 
-                  targets: [linkIndex], 
-                  visible: false,
-                  searchable: false 
-                } 
-              ],
               language: {
                 search: "Arama:",
                 lengthMenu: "_MENU_ kayıt göster",
@@ -162,8 +154,6 @@
               },
               initComplete: function () {
                 this.api().columns().every(function (colIndex) {
-                  if (colIndex === linkIndex) return; // "Link" sütunu için select oluşturma
-
                   const column = this;
                   const select = $(column.header())
                     .parent()
@@ -195,7 +185,7 @@
       } catch (err) {
         document.getElementById("tables").innerHTML = `
           <div class="alert alert-danger text-center">
-            Hata: Excel dosyası yüklenemedi.<br><strong>${fileName}</strong>
+            <strong>Hata:</strong> Excel dosyası yüklenemedi: <code>${fileName}</code>
           </div>`;
       }
     }
