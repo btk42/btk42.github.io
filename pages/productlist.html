@@ -63,97 +63,101 @@
     <div id="tables"></div>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
-      const fileName = urlParams.get("fileName") || "butonlar.xlsx"; //Dosya Adı
-      const pageTitle = urlParams.get("pageTitle") || "Butkon Ürünleri"; //Başlık
+      const fileName = urlParams.get("fileName") || "butonlar.xlsx";
+      const pageTitle = urlParams.get("pageTitle") || "Butkon Ürünleri";
 
+      // Sayfa başlıklarını güncelle
       document.title = pageTitle + " | Butkon";
       const metaTitle = document.querySelector('meta[name="title"]');
-      if (metaTitle) {
-        metaTitle.setAttribute("content", pageTitle + " | Butkon");
-      }
+      if (metaTitle) metaTitle.setAttribute("content", pageTitle + " | Butkon");
 
-      // Sayfa başlığı güncelle
       document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("pageHeading").textContent = pageTitle;
       });
 
       async function okuExcel() {
-
         try {
-        const response = await fetch(fileName);
-        if (!response.ok) throw new Error("Dosya bulunamadı.");
-        const arrayBuffer = await response.arrayBuffer();
-        const data = new Uint8Array(arrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
+          const response = await fetch(fileName);
+          if (!response.ok) throw new Error("Dosya yüklenemedi.");
+          const arrayBuffer = await response.arrayBuffer();
+          const data = new Uint8Array(arrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
 
-        const tablesDiv = document.getElementById("tables");
-        tablesDiv.innerHTML = "";
+          const tablesDiv = document.getElementById("tables");
+          tablesDiv.innerHTML = "";
 
-        workbook.SheetNames.forEach((sheetName, index) => {
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          workbook.SheetNames.forEach((sheetName, index) => {
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-          if (jsonData.length === 0) return;
+            if (jsonData.length === 0) return;
 
-          let headers = jsonData[0];
-          headers = headers.map((h, i) => h || `Sütun ${i + 1}`);
+            let headers = jsonData[0].map((h, i) => h || `Sütun ${i + 1}`);
+            const tableId = `excelTable_${index}`;
 
-          const tableId = `excelTable_${index}`;
+            let html = `
+              <div class="table-responsive mb-5">
+                <table id="${tableId}" class="display responsive nowrap" style="width:100%">
+                  <thead>
+                    <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+                    <tr>${headers.map(() => `<th><select><option value="">Hepsi</option></select></th>`).join("")}</tr>
+                  </thead>
+                  <tbody>`;
 
-          // TABLO HTML
-          let html = `
-          <div class="table-container">
-            <table id="${tableId}" class="display responsive nowrap" style="width:100%">
-              <thead>
-                <tr>`;
+            for (let i = 1; i < jsonData.length; i++) {
+              html += "<tr>";
+              const row = jsonData[i];
+              let linkUrl = "#";
+              for (let j = 0; j < headers.length; j++) {
+                const colName = headers[j]?.toString().toLowerCase().trim();
+                const cell = row[j] ?? "";
 
-          headers.forEach((header) => {
-            html += `<th>${header}</th>`;
-          });
+                //link alanını gizle
+                if (colName === "Link") {
+                  linkUrl = cell;
+                  continue;
+                }
 
-          html += `</tr><tr>`; // Filtre satırı
-
-          headers.forEach(() => {
-            html += `<th><select><option value="">Hepsi</option></select></th>`;
-          });
-
-          html += `</tr></thead><tbody>`;
-
-          // Veri satırları
-          for (let i = 1; i < jsonData.length; i++) {
-            html += "<tr>";
-            for (let j = 0; j < headers.length; j++) {
-              const cell = jsonData[i][j] ?? "";
-              html += `<td>${cell}</td>`;
+                if (colName === "Ürün Kodu" && linkUrl) {
+                  html += `<td><a href="${linkUrl}" target="_blank">${cell}</a></td>`;
+                } else {
+                  html += `<td>${cell}</td>`;
+                }
+              }
+              html += "</tr>";
             }
-            html += "</tr>";
-          }
 
-          html += "</tbody></table></div>";
-          tablesDiv.innerHTML += html;
+            html += `</tbody></table></div>`;
+            tablesDiv.innerHTML += html;
 
-          // DataTable başlat ve dropdown filtreleri doldur
-          requestAnimationFrame(() => {
-            const table = $(`#${tableId}`).DataTable({
-              responsive: true,
-              pageLength: 25,
-              orderCellsTop: true,
-              fixedHeader: true,
-              language: {
-                search: "Arama:",
-                lengthMenu: "_MENU_ kayıt göster",
-                zeroRecords: "Kayıt bulunamadı",
-                info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
-                infoEmpty: "Kayıt yok",
-                paginate: {
-                  next: "Sonraki",
-                  previous: "Önceki",
+            // DataTable başlat
+            requestAnimationFrame(() => {
+              const hiddenCols = [];
+              headers.forEach((h, idx) => {
+                if (h.toLowerCase().trim() === "link") {
+                  hiddenCols.push({ targets: [idx], visible: false, searchable: false });
+                }
+              });
+
+              const table = $(`#${tableId}`).DataTable({
+                responsive: true,
+                pageLength: 25,
+                orderCellsTop: true,
+                fixedHeader: true,
+                columnDefs: hiddenCols,
+                language: {
+                  search: "Arama:",
+                  lengthMenu: "_MENU_ kayıt göster",
+                  zeroRecords: "Kayıt bulunamadı",
+                  info: "_TOTAL_ kayıttan _START_ - _END_ arası gösteriliyor",
+                  infoEmpty: "Kayıt yok",
+                  paginate: {
+                    next: "Sonraki",
+                    previous: "Önceki",
+                  },
                 },
-              },
-              initComplete: function () {
-                this.api()
-                  .columns()
-                  .every(function (colIndex) {
+                initComplete: function () {
+                  this.api().columns().every(function (colIndex) {
                     const column = this;
                     const select = $(column.header())
                       .parent()
@@ -170,28 +174,24 @@
                       }
                     });
 
-                    Array.from(uniqueValues)
-                      .sort()
-                      .forEach(function (value) {
-                        select.append(
-                          `<option value="${value}">${value}</option>`
-                        );
-                      });
+                    Array.from(uniqueValues).sort().forEach(function (value) {
+                      select.append(`<option value="${value}">${value}</option>`);
+                    });
 
                     select.on("change", function () {
-                      const val = $.fn.dataTable.util.escapeRegex(
-                        $(this).val()
-                      );
+                      const val = $.fn.dataTable.util.escapeRegex($(this).val());
                       column.search(val ? `^${val}$` : "", true, false).draw();
                     });
                   });
-              },
+                },
+              });
             });
           });
-        });
-        } catch (error) {
-          console.error(error);
-          document.getElementById("tables").innerHTML = `<div class="alert alert-danger">Dosya yüklenemedi: ${fileName}</div>`;
+        } catch (err) {
+          document.getElementById("tables").innerHTML = `
+            <div class="alert alert-danger text-center">
+              Hata: Excel dosyası yüklenemedi.<br><strong>${fileName}</strong>
+            </div>`;
         }
       }
 
