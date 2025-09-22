@@ -107,19 +107,24 @@
             for (let i = 1; i < jsonData.length; i++) {
               html += "<tr>";
               const row = jsonData[i];
-              let linkUrl = "#";
+              let linkUrl = "";
               for (let j = 0; j < headers.length; j++) {
                 const colName = headers[j]?.toString(); //.toLowerCase().trim();
                 const cell = row[j] ?? "";
 
                 //link alanını gizle
-                if (colName === "Link") {
+                if (colName === "link") {
                   linkUrl = cell;
                   continue;
                 }
 
-                if (colName === "Ürün Kodu" && linkUrl) {
-                  html += `<td><a href="${linkUrl}" target="_blank">${cell}</a></td>`;
+                 // Ürün Kodu sütununa link ekle
+                if (colName === "ürün kodu") {
+                  if (linkUrl && linkUrl.trim() !== "") {
+                    html += `<td><a href="${linkUrl}" target="_blank">${cell}</a></td>`;
+                  } else {
+                    html += `<td>${cell}</td>`; // link boşsa düz yaz
+                  }
                 } else {
                   html += `<td>${cell}</td>`;
                 }
@@ -134,8 +139,7 @@
             requestAnimationFrame(() => {
               const hiddenCols = [];
               headers.forEach((h, idx) => {
-                // if (h.toLowerCase().trim() === "link") {
-                if (h === "Link") {
+                if (h.toLowerCase().trim() === "link") {
                   hiddenCols.push({ targets: [idx], visible: false, searchable: false });
                 }
               });
