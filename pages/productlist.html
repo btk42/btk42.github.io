@@ -109,16 +109,16 @@
               const row = jsonData[i];
               let linkUrl = "#";
               for (let j = 0; j < headers.length; j++) {
-                const colName = headers[j]?.toString().toLowerCase().trim();
+                const colName = headers[j]?.toString(); //.toLowerCase().trim();
                 const cell = row[j] ?? "";
 
                 //link alanını gizle
-                if (colName === "link") {
+                if (colName === "Link") {
                   linkUrl = cell;
                   continue;
                 }
 
-                if (colName === "ürünkodu" && linkUrl) {
+                if (colName === "Ürün Kodu" && linkUrl) {
                   html += `<td><a href="${linkUrl}" target="_blank">${cell}</a></td>`;
                 } else {
                   html += `<td>${cell}</td>`;
@@ -134,7 +134,8 @@
             requestAnimationFrame(() => {
               const hiddenCols = [];
               headers.forEach((h, idx) => {
-                if (h.toLowerCase().trim() === "link") {
+                // if (h.toLowerCase().trim() === "link") {
+                if (h === "link") {
                   hiddenCols.push({ targets: [idx], visible: false, searchable: false });
                 }
               });
