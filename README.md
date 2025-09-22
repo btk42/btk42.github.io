@@ -3,7 +3,9 @@
 
 Bu sayfa Butkon ürünlerinin bulunduğu ve repolara erişim sayfasıdır.
 
+[Dashboard](https://btk42.github.io/)
 
+[Ürünler](https://btk42.github.io/pages/products.html)
 
 
 ## Sık Sorulan Sorular
@@ -21,16 +23,10 @@ Cevap 2
 
 - S1
 - S2
-- S3
-- S4
-
   
 # Butkon
 
 Bu sayfa Butkon ürünlerinin bulunduğu ve repolara erişim sayfasıdır.
-
-
-
 
 ## Destek
 
