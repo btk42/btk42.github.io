@@ -109,7 +109,7 @@
               const row = jsonData[i];
               let linkUrl = "";
               for (let j = 0; j < headers.length; j++) {
-                const colName = headers[j]?.toString(); //.toLowerCase().trim();
+                const colName = headers[j]?.toString().toLowerCase().trim();
                 const cell = row[j] ?? "";
 
                 //link alanını gizle
