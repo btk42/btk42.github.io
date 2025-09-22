@@ -142,6 +142,13 @@
               pageLength: 25,
               orderCellsTop: true,
               fixedHeader: true,
+              columnDefs: [ 
+                { 
+                  targets: [linkIndex], 
+                  visible: false,
+                  searchable: false 
+                } 
+              ],
               language: {
                 search: "Arama:",
                 lengthMenu: "_MENU_ kayıt göster",
@@ -155,6 +162,8 @@
               },
               initComplete: function () {
                 this.api().columns().every(function (colIndex) {
+                  if (colIndex === linkIndex) return; // "Link" sütunu için select oluşturma
+
                   const column = this;
                   const select = $(column.header())
                     .parent()
