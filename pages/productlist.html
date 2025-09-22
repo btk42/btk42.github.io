@@ -96,8 +96,8 @@
             <div class="table-responsive mb-5">
               <table id="${tableId}" class="display responsive nowrap" style="width:100%">
                 <thead>
-                  <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
-                  <tr>${headers.map(() => `<th><select><option value="">Hepsi</option></select></th>`).join("")}</tr>
+                  <tr>${headers.map(h => h.toLowerCase().trim() !== "link" ? `<th>${h}</th>` : "").join("")}</tr>
+                  <tr>${headers.map(h => h.toLowerCase().trim() !== "link" ? `<th><select><option value="">Hepsi</option></select></th>` : "").join("")}</tr>
                 </thead>
                 <tbody>`;
 
