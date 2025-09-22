@@ -6,7 +6,7 @@
     <meta http-equiv="Copyright" content="Copyright 2025 - Butkon RD Team" />
     <meta http-equiv="Reply-to" content="byyarim@gmail.com" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge,chrome=1" />
-    <title>Butkon Ürünleri | Butkon</title>
+    <title>Product List | Butkon</title>
     <meta name="author" content="Bayram YARIM" />
     <meta name="title" content="Product List | Butkon - Github Page" />
     <meta name="description" content="Butkon Asansör" />
@@ -55,15 +55,13 @@
     </style>
   </head>
   <body>
-    <div>
+    <!-- <div>
       <h2 class="center">Butkon Ürünleri</h2>
-    </div>
-
+    </div> -->
     <div id="tables"></div>
-
     <script>
       async function okuExcel() {
-        const response = await fetch("ButkonNameExercise.xlsx");
+        const response = await fetch("productlist.xlsx");
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
@@ -85,7 +83,6 @@
           // TABLO HTML
           let html = `
           <div class="table-container">
-            <h3>Sayfa: ${sheetName}</h3>
             <table id="${tableId}" class="display responsive nowrap" style="width:100%">
               <thead>
                 <tr>`;
