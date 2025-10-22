@@ -1,0 +1,128 @@
+/* ========== TEMEL STİLLER ========== */
+body {
+  font-family: "Poppins", sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s ease;
+  overflow-x: hidden;
+}
+
+/* Tema geçiş butonu */
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
+}
+
+/* Konteyner */
+.menu-container {
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 1000px;
+  width: 90%;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+
+/* Başlık */
+.dashboard-title {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 40px;
+  font-size: 2rem;
+  letter-spacing: 0.5px;
+}
+
+/* Menü kutuları */
+.menu-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  padding: 25px 10px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  height: 130px;
+}
+
+.menu-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.menu-box div:last-child {
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+/* ========== AÇIK TEMA ========== */
+.light-mode {
+  background: linear-gradient(135deg, #f8f9fb 0%, #e9eef5 100%);
+  color: #333;
+}
+
+.light-mode .menu-container {
+  background: #ffffffcc;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .menu-box {
+  background: #fff;
+  color: #333;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+.light-mode .menu-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== KOYU TEMA ========== */
+.dark-mode {
+  background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+  color: #fff;
+}
+
+.dark-mode .menu-container {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.dark-mode .menu-box {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .menu-box:hover {
+  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== RENKLER (İKONLAR) ========== */
+.bg-1 .menu-icon { color: #00acc1; }
+.bg-2 .menu-icon { color: #ff9800; }
+.bg-3 .menu-icon { color: #4caf50; }
+.bg-4 .menu-icon { color: #e91e63; }
+.bg-7 .menu-icon { color: #9c27b0; }
+.bg-8 .menu-icon { color: #03a9f4; }
+.bg-10 .menu-icon { color: #ffc107; }
+.bg-11 .menu-icon { color: #ff7043; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 576px) {
+  .dashboard-title {
+    font-size: 1.6rem;
+  }
+  .menu-box {
+    height: 110px;
+  }
+  .menu-icon {
+    font-size: 1.6rem;
+  }
+}
