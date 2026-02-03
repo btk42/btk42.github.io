@@ -84,6 +84,7 @@
         tablesDiv.innerHTML = "";
 
         workbook.SheetNames.forEach((sheetName, index) => {
+			if (index !== 0) return; //Sadece ilk sayfa
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           if (jsonData.length === 0) return;
@@ -110,12 +111,10 @@
           for (let i = 1; i < jsonData.length; i++) {
             const row = jsonData[i];
             let rowHtml = "<tr>";
-const visibleIndexes = headers
-  .map((h, i) => ({ h, i }))
-  .filter(obj => obj.i !== linkIndex);
 
-visibleIndexes.forEach(({ i: actualColIndex }) => {
-  const cell = row[actualColIndex] ?? "";
+            visibleHeaders.forEach((_, visibleColIndex) => {
+              const actualColIndex = headers.findIndex((_, idx) => idx !== linkIndex && headers[idx] === visibleHeaders[visibleColIndex]);
+              const cell = row[actualColIndex] ?? "";
 
               if (actualColIndex === urunKoduIndex) {
                 const linkValue = row[linkIndex]?.toString().trim();
