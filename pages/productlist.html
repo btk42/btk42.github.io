@@ -84,7 +84,7 @@
         tablesDiv.innerHTML = "";
 
         workbook.SheetNames.forEach((sheetName, index) => {
-			if (index !== 0) return; //Sadece ilk sayfa
+			if (index !== 0) return; //Sadece ilk sayfa - Added by BY:03.02.2026
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
           if (jsonData.length === 0) return;
